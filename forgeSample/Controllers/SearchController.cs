@@ -37,7 +37,25 @@ namespace forgeSample.Controllers
             Credentials credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
             if (credentials == null) { return null; }
 
-            string json = "{\"_source\":[\"projectId\",\"folderUrn\",\"itemUrn\",\"versionUrn\", \"fileName\"],\"query\":{\"bool\":{\"must\":{\"match\":{\"metadata.collection\":\"" + q + "\"}},\"filter\":[{\"term\":{\"hubId\":\"" + hubId.Replace("-", string.Empty) + "\"}}]}}}";
+            //string json = "{\"_source\":[\"projectId\",\"folderUrn\",\"itemUrn\",\"versionUrn\", \"fileName\"],\"query\":{\"bool\":{\"must\":{\"match\":{\"metadata.collection\":\"" + q + "\"}},\"filter\":[{\"term\":{\"hubId\":\"" + hubId.Replace("-", string.Empty) + "\"}}]}}}";
+            string json = $@"{{
+                ""_source"":[""projectId"",""folderUrn"",""itemUrn"",""versionUrn"", ""fileName""],
+                ""query"":{{
+                    ""bool"":{{
+                        ""must"":[],
+                        ""should"":[],
+                        ""must_not"":[],
+                        ""filter"":[
+                            {{""multi_match"": {{
+                                ""type"": ""best_fields"",
+                                ""query"": ""{q}"",
+                                ""lenient"": true
+                                }}
+                            }}
+                        ]
+                    }}
+                }}
+             }}";
             string absolutePath = "/manifest/_search";
 
             RestClient client = new RestClient(Config.ElasticSearchServer);

@@ -168,21 +168,26 @@ namespace forgeSample.Controllers
             {
                 if (item.MIME != "application/autodesk-db") continue; 
 
-                string file = "objects_vals.json.gz"; // the only file we need here
-                Uri myUri = new Uri(new Uri(item.Path.BasePath), file);
-                resouces.Add(new Resource()
-                {
-                    FileName = file,
-                    RemotePath = "derivativeservice/v2/derivatives/" + Uri.UnescapeDataString(myUri.AbsoluteUri),
-                    LocalPath = Path.Combine(item.Path.LocalPath, file)
-                });
+                    string file = "objects_vals.json.gz"; // the only file we need here
+                    Uri myUri = new Uri(new Uri(item.Path.BasePath), file);
+                    resouces.Add(new Resource()
+                    {
+                        FileName = file,
+                        RemotePath = "derivativeservice/v2/derivatives/" + Uri.UnescapeDataString(myUri.AbsoluteUri),
+                        LocalPath = Path.Combine(item.Path.LocalPath, file)
+                    });
             }
 
             // this approach uses the Viewer propertyDatabase, which is a non-supported way of accessing the model metadata
             // it will return the non-duplicated list of attributes values (not the attribute type)
             // as we don't want to manipulate it, just search, it doesn't matter if this list changes its format
             IRestClient forgeClient = new RestClient("https://developer.api.autodesk.com/");
-            if (resouces.Count != 1) throw new Exception(resouces.Count + " objects_vals.json.gz found, will try again");
+            if (resouces.Count != 1 && fileName.ToLower().IndexOf("pdf") == -1) throw new Exception(resouces.Count + " objects_vals.json.gz found, will try again");
+
+            if(fileName.ToLower().IndexOf("pdf") != -1)
+            {
+
+            } else { 
 
             RestRequest forgeRequest = new RestRequest(resouces[0].RemotePath, Method.GET);
             forgeRequest.AddHeader("Authorization", "Bearer " + credentials.TokenInternal);
@@ -203,31 +208,31 @@ namespace forgeSample.Controllers
             }
 
 
-            // as an alternative solution, using supported APIs, one could get the complete metadata JSON
-            // but that results in more data that we don't need for search, like attribute names
-            /*{
-                dynamic metadata = await derivative.GetMetadataAsync(versionUrn64);
-                foreach (KeyValuePair<string, dynamic> metadataItem in new DynamicDictionaryItems(metadata.data.metadata))
-                {
-                    dynamic properties = await derivative.GetModelviewPropertiesAsync(versionUrn64, metadataItem.Value.guid);
-                    if (properties == null)
+                // as an alternative solution, using supported APIs, one could get the complete metadata JSON
+                // but that results in more data that we don't need for search, like attribute names
+                /*{
+                    dynamic metadata = await derivative.GetMetadataAsync(versionUrn64);
+                    foreach (KeyValuePair<string, dynamic> metadataItem in new DynamicDictionaryItems(metadata.data.metadata))
                     {
-                        console.WriteLine("Model not ready, will retry");
-                        throw new Exception("Model not ready...");
-                    }
-                    console.WriteLine(string.Format("View: {0}", (string)metadataItem.Value.guid));
-                    JArray collection = JObject.Parse(properties.ToString()).data.collection;
+                        dynamic properties = await derivative.GetModelviewPropertiesAsync(versionUrn64, metadataItem.Value.guid);
+                        if (properties == null)
+                        {
+                            console.WriteLine("Model not ready, will retry");
+                            throw new Exception("Model not ready...");
+                        }
+                        console.WriteLine(string.Format("View: {0}", (string)metadataItem.Value.guid));
+                        JArray collection = JObject.Parse(properties.ToString()).data.collection;
 
-                    if (collection.Count > 0)
-                    {
-                        dynamic viewProperties = new JObject();
-                        viewProperties.viewId = (string)metadataItem.Value.guid;
-                        viewProperties.collection = collection.ToString(Newtonsoft.Json.Formatting.None);
-                        document.metadata.Add(viewProperties);
+                        if (collection.Count > 0)
+                        {
+                            dynamic viewProperties = new JObject();
+                            viewProperties.viewId = (string)metadataItem.Value.guid;
+                            viewProperties.collection = collection.ToString(Newtonsoft.Json.Formatting.None);
+                            document.metadata.Add(viewProperties);
+                        }
                     }
-                }
-            }*/
-
+                }*/
+            }
             string json = (string)document.ToString(Newtonsoft.Json.Formatting.None);
             string absolutePath = string.Format("/manifest/_doc/{0}", Base64Encode(itemUrn));
 
